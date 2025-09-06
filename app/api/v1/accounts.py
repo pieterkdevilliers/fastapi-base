@@ -25,7 +25,9 @@ def list_accounts(
 
 # --- POST create a new account ---
 @router.post("/", response_model=AccountRead)
-def create_account(account: AccountCreate, session: Session = Depends(get_session)):
+def create_account(
+    account: AccountCreate,
+    session: Session = Depends(get_session)):
     """
     Create a new account in the database."""
     account = account_utils.create_new_account_in_db(
