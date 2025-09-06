@@ -1,22 +1,38 @@
 from pydantic import BaseModel
+from typing import List, Optional
 from app.schemas.accounts import AccountRead
 
 class UserCreate(BaseModel):
+    """
+    Schema for creating a new user.
+    """
     email: str
     password: str
-    account_unique_id: str
-    full_name: str | None = None
+    full_name: Optional[str] = None
+    account_ids: Optional[List[int]] = []  # IDs of accounts to assign on creation
 
-class UserRead(BaseModel):
+class UserReadBasic(BaseModel):
+    """
+    Basic schema for reading user details.
+    """
     id: int
     email: str
-    account_unique_id: str
-    account: AccountRead
-    full_name: str | None = None
+    full_name: Optional[str] = None
 
     class Config:
+        """
+        Enable ORM mode for compatibility with ORM objects.
+        """
         orm_mode = True
 
+class UserRead(UserReadBasic):
+    """
+    Schema for reading user details with associated accounts.
+    """
+    accounts: List[AccountRead] = []  # many-to-many accounts
+
 class UserLogin(BaseModel):
+    """
+    Schema for user login."""
     email: str
     password: str
