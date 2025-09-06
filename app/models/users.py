@@ -1,20 +1,21 @@
+from typing import List, Optional
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional
-from .accounts import Account
+from app.models.associations import UserAccountLink
 
 class UserBase(SQLModel):
     """
-    User Model Base
+    Base model for User with common fields.
     """
     email: str
     password: str
-    account_unique_id: str = Field(foreign_key="account.account_unique_id")
     full_name: Optional[str] = None
-
 
 class User(UserBase, table=True):
     """
-    User Model
+    User model representing a user entity.
     """
     id: Optional[int] = Field(default=None, primary_key=True)
-    account: Account = Relationship(back_populates="users")
+    accounts: List["Account"] = Relationship(
+        back_populates="users",
+        link_model=UserAccountLink
+    )

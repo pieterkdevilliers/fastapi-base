@@ -10,12 +10,17 @@ from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 
-# --- GET all accounts ---
+# --- GET all accounts for the current user ---
 @router.get("/", response_model=List[AccountRead])
-def list_accounts(session: Session = Depends(get_session)):
+def list_accounts(
+    current_user: User = Depends(get_current_user), 
+    session: Session = Depends(get_session)
+):
     """
-    Retrieve all accounts from the database."""
-    accounts = session.exec(select(Account)).all()
+    Retrieve all accounts for the currently logged-in user.
+    """
+    # assuming a many-to-many relationship: user.accounts
+    accounts = current_user.accounts  # this will already be a list of Account objects
     return accounts
 
 # --- POST create a new account ---
