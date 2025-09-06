@@ -23,3 +23,10 @@ class AccountReadWithUsers(AccountRead):
     Schema for reading account details with associated users.
     """
     users: List["UserReadBasic"] = []  # optional for nested read
+
+
+class AccountUpdate(BaseModel):
+    """
+    Schema for updating account details.
+    """
+    account_organisation: Optional[str] = None
