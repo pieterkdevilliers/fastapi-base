@@ -29,3 +29,14 @@ def get_account_by_account_unique_id(account_unique_id: str,session: Session):
     account = result.first()
 
     return account
+
+
+def update_account(account: Account, account_organisation: str, session: Session):
+    """
+    Updates the account's organisation name.
+    """
+    account.account_organisation = account_organisation
+    session.add(account)
+    session.commit()
+    session.refresh(account)
+    return account
