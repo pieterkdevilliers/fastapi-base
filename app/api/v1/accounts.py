@@ -5,8 +5,11 @@ from app.core.db import get_session
 from app.models.accounts import Account
 from app.models.users import User
 from app.schemas.accounts import AccountCreate, AccountRead, AccountUpdate
+from app.schemas.users import UserCreate, UserReadBasic
 from app.utils import accounts as account_utils
+from app.utils import users as user_utils
 from app.api.v1.auth import get_current_user
+from app.core.security import hash_password
 
 router = APIRouter()
 
@@ -28,6 +31,7 @@ def list_accounts(
 @router.post("/", response_model=AccountRead)
 def create_account(
     account: AccountCreate,
+    user: UserCreate,
     session: Session = Depends(get_session)):
     """
     Create a new account in the database."""
@@ -35,6 +39,15 @@ def create_account(
         account_organisation=account.account_organisation,
         session=session
     )
+
+    user = user_utils.create_new_user_in_db(
+        email=user.email,
+        password=hash_password(user.password),
+        full_name=user.full_name,
+        account_ids=[account.id],
+        session=session
+    )
+
     return account
 
 
