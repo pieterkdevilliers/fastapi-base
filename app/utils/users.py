@@ -80,3 +80,14 @@ def delete_user_in_db(user: User, session: Session):
     session.delete(user)
     session.commit()
     return
+
+
+def get_orphaned_users_to_delete(account: Account, session: Session):
+    """
+    Retrieves users who would be orphaned when an account is deleted.
+    """
+    orphaned_users = []
+    for user in account.users:
+        if len(user.accounts) == 1 and user.accounts[0].id == account.id:
+            orphaned_users.append(user)
+    return orphaned_users
