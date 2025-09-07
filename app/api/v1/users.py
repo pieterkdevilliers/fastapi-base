@@ -26,7 +26,10 @@ def list_users(
 
 # --- POST create a new user ---
 @router.post("/", response_model=UserRead)
-def create_user(user: UserCreate, session: Session = Depends(get_session)):
+def create_user(
+    user: UserCreate,
+    current_user: User = Depends(get_current_user), 
+    session: Session = Depends(get_session)):
     """
     Create a new user in the database and assign to multiple accounts.
     """
