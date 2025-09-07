@@ -72,3 +72,11 @@ def update_user_in_db(user: User, email: Optional[str], full_name: Optional[str]
     session.commit()
     session.refresh(user)
     return user
+
+
+def delete_user_in_db(user: User, session: Session):
+    """
+    Deletes a user from the database."""
+    session.delete(user)
+    session.commit()
+    return
