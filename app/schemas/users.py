@@ -36,3 +36,9 @@ class UserLogin(BaseModel):
     Schema for user login."""
     email: str
     password: str
+
+class UserUpdate(BaseModel):
+    """
+    Schema for updating user details."""
+    email: Optional[str] = None
+    full_name: Optional[str] = None

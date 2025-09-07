@@ -58,3 +58,17 @@ def get_user_by_email(email: str, session: Session):
     user = result.first()
 
     return user
+
+
+def update_user_in_db(user: User, email: Optional[str], full_name: Optional[str], session: Session):
+    """
+    Update user details in the database."""
+    if email:
+        user.email = email
+    if full_name:
+        user.full_name = full_name
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
