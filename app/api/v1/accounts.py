@@ -40,6 +40,15 @@ def create_account(
         session=session
     )
 
+    existing_user = user_utils.get_user_by_email(email=user.email, session=session)
+    if existing_user:
+        user_utils.add_user_to_accounts(
+            user=existing_user,
+            account_ids=[account.id],
+            session=session
+        )
+        return account
+
     user = user_utils.create_new_user_in_db(
         email=user.email,
         password=hash_password(user.password),
@@ -79,7 +88,10 @@ def update_account(
 
 # --- GET single account by ID ---
 @router.get("/{account_unique_id}", response_model=AccountRead)
-def get_account(account_unique_id: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+def get_account(
+    account_unique_id: str,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)):
     """
     Retrieve a single account by its account_unique_id."""
     account = account_utils.get_account_by_account_unique_id(
@@ -89,3 +101,34 @@ def get_account(account_unique_id: str, current_user: User = Depends(get_current
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     return account
+
+
+# --- DELETE an Account and orphaned Users---
+@router.delete("/{account_unique_id}", response_model=dict)
+def delete_account(
+    account_unique_id: str,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Delete an account and any users that are only associated with this account."""
+    account = account_utils.get_account_by_account_unique_id(
+        account_unique_id=account_unique_id,
+        session=session
+    )
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    # Find users associated only with this account
+    users_to_delete = user_utils.get_orphaned_users_to_delete(account=account, session=session)
+    
+    # Delete the account
+    session.delete(account)
+    
+    # Delete orphaned users
+    for user in users_to_delete:
+        user_utils.delete_user_in_db(user=user, session=session)
+    
+    session.commit()
+    
+    return {"detail": "Account and associated orphaned users deleted successfully"}
