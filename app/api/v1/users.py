@@ -4,7 +4,7 @@ from typing import List
 from app.core.security import hash_password
 from app.core.db import get_session
 from app.models.users import User
-from app.schemas.users import UserCreate, UserRead, UserReadBasic
+from app.schemas.users import UserCreate, UserRead, UserReadBasic, UserUpdate
 from app.utils import users as user_utils
 from app.api.v1.auth import get_current_user
 
@@ -52,15 +52,24 @@ def create_user(
     return new_user
 
 
-# # --- GET single account by ID ---
-# @router.get("/{account_unique_id}", response_model=AccountRead)
-# def get_account(account_unique_id: str, session: Session = Depends(get_session)):
-#     """
-#     Retrieve a single account by its account_unique_id."""
-#     account = account_utils.get_account_by_account_unique_id(
-#         account_unique_id=account_unique_id,
-#         session=session
-#     )
-#     if not account:
-#         raise HTTPException(status_code=404, detail="Account not found")
-#     return account
+# --- PUT update user ---
+@router.put("/{user_id}", response_model=UserRead)
+def update_user(
+    user_id: int,
+    user_update: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Update an existing user's details."""
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user = user_utils.update_user_in_db(
+        user=user,
+        email=user_update.email,
+        full_name=user_update.full_name,
+        session=session
+    )
+    return user
