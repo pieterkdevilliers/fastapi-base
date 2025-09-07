@@ -73,3 +73,21 @@ def update_user(
         session=session
     )
     return user
+
+
+# --- DELETE user ---
+@router.delete("/{user_id}", response_model=dict)
+def delete_user(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Delete a user from the database."""
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_utils.delete_user_in_db(user=user, session=session)
+    
+    return {"detail": "User deleted successfully"}
