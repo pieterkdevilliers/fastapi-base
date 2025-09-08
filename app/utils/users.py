@@ -37,6 +37,20 @@ def add_user_to_accounts(user: User, account_ids: list[int], session: Session):
     return user
 
 
+def remove_user_from_account(user: User, account_id: int, session: Session):
+    """
+    Removes a user from a specific account by ID.
+    """
+    account = session.get(Account, account_id)
+    if account and account in user.accounts:
+        user.accounts.remove(account)
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+    return user
+
+
+
 
 def get_users_for_account(account_unique_id: str, session: Session):
     """

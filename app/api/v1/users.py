@@ -4,7 +4,7 @@ from typing import List
 from app.core.security import hash_password
 from app.core.db import get_session
 from app.models.users import User
-from app.schemas.users import UserCreate, UserRead, UserReadBasic, UserUpdate, UserToAccount
+from app.schemas.users import UserCreate, UserRead, UserReadBasic, UserUpdate, UserToAccount, MessageResponse
 from app.utils import users as user_utils
 from app.utils.auth import get_current_user
 
@@ -105,6 +105,35 @@ def add_user_to_account(
         session=session
     )
     return new_user
+
+
+# ---PUT remove user from account ---
+@router.put("/remove-user-from-account/", response_model=MessageResponse)
+def remove_user_from_account(
+    user_id: int,
+    account_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Remove a user from an account.
+    """
+    user = session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_utils.remove_user_from_account(
+        user=user,
+        account_id=account_id,
+        session=session
+    )
+    print(user.accounts)
+
+    if len(user.accounts) == 0:
+        user_utils.delete_user_in_db(user=user, session=session)
+
+    return {"message": "User removed from account successfully"}
+
 
 
 # --- DELETE user ---

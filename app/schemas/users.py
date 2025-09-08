@@ -50,3 +50,9 @@ class UserToAccount(BaseModel):
     email: str
     password: str
     full_name: Optional[str] = None
+
+class MessageResponse(BaseModel):
+    """
+    Generic message response schema.
+    """
+    message: str
