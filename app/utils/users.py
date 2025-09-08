@@ -1,12 +1,18 @@
 from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import select
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from app.models.users import User
 from app.models.accounts import Account
 
 
-def create_new_user_in_db(email: str, password: str, full_name: str,
-                          account_ids: Optional[List[int]], session: Session):
+async def create_new_user_in_db(
+        email: str,
+        password: str,
+        full_name: str,
+        account_ids: Optional[List[int]],
+        session: AsyncSession):
     """
     Creates a new user and assigns it to multiple accounts.
     """
@@ -14,67 +20,102 @@ def create_new_user_in_db(email: str, password: str, full_name: str,
     
     if account_ids:
         # fetch accounts from DB
-        accounts = session.exec(select(Account).where(Account.id.in_(account_ids))).all()
-        user.accounts = accounts  # link many-to-many
+        accounts = await session.exec(select(Account).where(Account.id.in_(account_ids)))
+        user.accounts = accounts.all()
 
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
     return user
 
 
-def add_user_to_accounts(user: User, account_ids: list[int], session: Session):
+async def add_user_to_accounts(user: User, account_ids: list[int], session: AsyncSession):
     """
     Adds an existing user to multiple accounts."""
     if isinstance(account_ids, int):
         account_ids = [account_ids]
-    accounts = session.exec(select(Account).where(Account.id.in_(account_ids))).all()
+    result = await session.exec(select(Account).where(Account.id.in_(account_ids)))
+    accounts = result.all()
     for account in accounts:
         user.accounts.append(account)
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
     return user
 
 
-def remove_user_from_account(user: User, account_id: int, session: Session):
+async def remove_user_from_account(user: User, account_id: int, session: AsyncSession):
     """
     Removes a user from a specific account by ID.
     """
-    account = session.get(Account, account_id)
+    account = await session.get(Account, account_id)
     if account and account in user.accounts:
         user.accounts.remove(account)
         session.add(user)
-        session.commit()
-        session.refresh(user)
+        await session.commit()
+        await session.refresh(user)
     return user
 
 
 
 
-def get_users_for_account(account_unique_id: str, session: Session):
+async def get_users_for_account(account_unique_id: str, session: AsyncSession):
     """
     Retrives all User objects based on account_unique_id
     """
     statement = select(User).filter(Account.account_unique_id == account_unique_id)
-    result = session.exec(statement)
+    result = await session.exec(statement)
     users = result.all()
 
     return users
 
 
-def get_user_by_email(email: str, session: Session):
+async def get_user_by_email(email: str, session: AsyncSession) -> User | None:
     """
-    Retrieve user object by email_address
+    Retrieve a user object by email, eagerly loading their accounts.
     """
-    statement = select(User).filter(User.email == email)
-    result = session.exec(statement)
+    statement = select(User).options(selectinload(User.accounts)).where(User.email == email)
+    result = await session.exec(statement)
     user = result.first()
-
     return user
 
 
-def update_user_in_db(user: User, email: Optional[str], full_name: Optional[str], session: Session):
+async def get_user_with_accounts_by_email(email: str, session: AsyncSession) -> User | None:
+    """
+    Retrieve a user by email, eagerly loading their associated accounts."""
+    statement = (
+        select(User)
+        .options(selectinload(User.accounts))
+        .where(User.email == email)
+    )
+    result = await session.exec(statement)
+    return result.first()
+
+
+async def get_user_with_accounts_by_id(user_id: int, session: AsyncSession) -> User | None:
+    """
+    Retrieve a user by ID, eagerly loading their associated accounts.
+    """
+    statement = (
+        select(User)
+        .options(selectinload(User.accounts))
+        .where(User.id == user_id)
+    )
+    result = await session.exec(statement)
+    return result.first()
+
+
+async def get_user_with_accounts(user_id: int, session: AsyncSession) -> User | None:
+    """
+    Retrieve a user by ID, eagerly loading their associated accounts.
+    """
+    statement = select(User).options(selectinload(User.accounts)).where(User.id == user_id)
+    result = await session.exec(statement)
+    user = result.first()
+    return user
+
+
+async def update_user_in_db(user: User, email: Optional[str], full_name: Optional[str], session: AsyncSession):
     """
     Update user details in the database."""
     if email:
@@ -83,23 +124,29 @@ def update_user_in_db(user: User, email: Optional[str], full_name: Optional[str]
         user.full_name = full_name
 
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
     return user
 
 
-def delete_user_in_db(user: User, session: Session):
+async def delete_user_in_db(user: User, session: AsyncSession):
     """
     Deletes a user from the database."""
     session.delete(user)
-    session.commit()
+    await session.commit()
     return
 
 
-def get_orphaned_users_to_delete(account: Account, session: Session):
+async def get_orphaned_users_to_delete(account: Account, session: AsyncSession):
     """
     Retrieves users who would be orphaned when an account is deleted.
     """
+    statement = select(Account).options(selectinload(Account.users)).where(Account.id == account.id)
+    result = await session.exec(statement)
+    account = result.one_or_none()
+
+    if not account:
+        return []
     orphaned_users = []
     for user in account.users:
         if len(user.accounts) == 1 and user.accounts[0].id == account.id:
