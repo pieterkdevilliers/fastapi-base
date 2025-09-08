@@ -2,9 +2,6 @@ from secrets import token_hex
 from sqlmodel import Session
 from sqlmodel.sql.expression import select
 from app.models.accounts import Account
-from app.models.users import User
-from fastapi import Depends
-from app.api.v1.auth import get_current_user
 
 def create_new_account_in_db(account_organisation: str, session: Session):
     """

@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     ENV: str = "development"  # default to dev
     DATABASE_URL: str  # must be provided in env
+    FE_BASE_URL: str  # Frontend base URL
 
     # JWT settings
     SECRET_KEY: str
