@@ -24,6 +24,22 @@ def list_users(
     )
     return users
 
+
+# --- GET user by ID ---
+@router.get("/get-user/{user_id}", response_model=UserReadBasic)
+def get_user(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Retrieve a user by ID from the database."""
+    user = session.get(User, user_id)
+    print("User fetched:", user)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
 # --- POST create a new user ---
 @router.post("/", response_model=UserRead)
 def create_user(
