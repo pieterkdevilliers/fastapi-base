@@ -42,3 +42,11 @@ class UserUpdate(BaseModel):
     Schema for updating user details."""
     email: Optional[str] = None
     full_name: Optional[str] = None
+
+class UserToAccount(BaseModel):
+    """
+    Schema for adding a user to an account.
+    """
+    email: str
+    password: str
+    full_name: Optional[str] = None

@@ -4,7 +4,7 @@ from typing import List
 from app.core.security import hash_password
 from app.core.db import get_session
 from app.models.users import User
-from app.schemas.users import UserCreate, UserRead, UserReadBasic, UserUpdate
+from app.schemas.users import UserCreate, UserRead, UserReadBasic, UserUpdate, UserToAccount
 from app.utils import users as user_utils
 from app.utils.auth import get_current_user
 
@@ -73,6 +73,38 @@ def update_user(
         session=session
     )
     return user
+
+
+# ---PUT add user to account ---
+@router.put("/add-user-to-account/", response_model=UserRead)
+def add_user_to_account(
+    account_id: List[int],
+    user: UserToAccount,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Add a user to an existing account.
+    If the user does not exist, create a new user and add to the account.
+    """
+    existing_user = user_utils.get_user_by_email(email=user.email, session=session)
+    if existing_user:
+        print("User exists, adding to account")
+        user_utils.add_user_to_accounts(
+            user=existing_user,
+            account_ids=account_id,  # assuming at least one account is provided
+            session=session
+        )
+        return existing_user
+    print("User does not exist, creating new user and adding to account")
+    new_user = user_utils.create_new_user_in_db(
+        email=user.email,
+        password=hash_password(user.password),
+        full_name=user.full_name,
+        account_ids=account_id,
+        session=session
+    )
+    return new_user
 
 
 # --- DELETE user ---
