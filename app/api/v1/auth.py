@@ -8,10 +8,15 @@ from app.schemas.security import ForgotPasswordRequest, TokenValidateRequest, Re
 from app.models.users import User
 from app.core.db import get_session
 import app.core.security as security
+from app.core.aws_ses_service import EmailService, get_email_service
 from app.core.config import settings
 from app.utils import users as user_utils
+import boto3
 
 router = APIRouter(tags=["auth"])
+# Initialize the S3 client
+s3 = boto3.client('s3')
+
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
@@ -28,7 +33,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = D
 
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
-def forgot_password(request: ForgotPasswordRequest, session: Session = Depends(get_session)):
+def forgot_password(
+    request: ForgotPasswordRequest,
+    email_service: EmailService = Depends(get_email_service),
+    session: Session = Depends(get_session)):
     """
     Handle forgot password requests.
     """
@@ -39,15 +47,14 @@ def forgot_password(request: ForgotPasswordRequest, session: Session = Depends(g
         reset_link = f"{settings.FE_BASE_URL}/reset-password?token={token}"
         print(f"Password reset link for {user.email}: {reset_link}")
 
-        # try:
-        #     # This is now much cleaner and more descriptive!
-        #     email_service.send_password_reset_email(
-        #         to_email=user.user_email,
-        #         reset_link=reset_link
-        #     )
-        # except Exception as e:
-        #     print(f"ERROR: Could not send password reset email to {user.user_email}. Error: {e}")
-        #     return {"message": "If an account with that email exists, a password reset link has been sent."}
+        try:
+            email_service.send_password_reset_email(
+                to_email=user.email,
+                reset_link=reset_link
+            )
+        except Exception as e:
+            print(f"ERROR: Could not send password reset email to {user.user_email}. Error: {e}")
+            return {"message": "If an account with that email exists, a password reset link has been sent."}
 
     return {"message": "If an account with that email exists, a password reset link has been sent."}
 

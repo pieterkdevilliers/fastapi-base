@@ -14,6 +14,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "sqlmodel>=0.0.24",
     "uvicorn[standard]>=0.35.0",
+    "boto3>=1.40.25",
 ]
 
 [dependency-groups]
