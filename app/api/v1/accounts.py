@@ -15,7 +15,7 @@ router = APIRouter()
 
 # --- GET all accounts for the current user ---
 @router.get("/", response_model=List[AccountRead])
-def list_accounts(
+async def list_accounts(
     current_user: User = Depends(get_current_user), 
     session: Session = Depends(get_session)
 ):
@@ -29,27 +29,27 @@ def list_accounts(
 
 # --- POST create a new account ---
 @router.post("/", response_model=AccountRead)
-def create_account(
+async def create_account(
     account: AccountCreate,
     user: UserCreate,
     session: Session = Depends(get_session)):
     """
     Create a new account in the database."""
-    account = account_utils.create_new_account_in_db(
+    account = await account_utils.create_new_account_in_db(
         account_organisation=account.account_organisation,
         session=session
     )
 
-    existing_user = user_utils.get_user_by_email(email=user.email, session=session)
+    existing_user = await user_utils.get_user_by_email(email=user.email, session=session)
     if existing_user:
-        user_utils.add_user_to_accounts(
+        await user_utils.add_user_to_accounts(
             user=existing_user,
             account_ids=[account.id],
             session=session
         )
         return account
 
-    user = user_utils.create_new_user_in_db(
+    user = await user_utils.create_new_user_in_db(
         email=user.email,
         password=hash_password(user.password),
         full_name=user.full_name,
@@ -62,7 +62,7 @@ def create_account(
 
 # --- Updte account ---
 @router.put("/{account_unique_id}", response_model=AccountRead)
-def update_account(
+async def update_account(
     account_unique_id: str,
     account_update: AccountUpdate,
     current_user: User = Depends(get_current_user),
@@ -70,14 +70,14 @@ def update_account(
 ):
     """
     Update an existing account's details."""
-    account = account_utils.get_account_by_account_unique_id(
+    account = await account_utils.get_account_by_account_unique_id(
         account_unique_id=account_unique_id,
         session=session
     )
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     
-    account = account_utils.update_account(
+    account = await account_utils.update_account(
         account=account,
         account_organisation=account_update.account_organisation or account.account_organisation,
         session=session
@@ -88,13 +88,13 @@ def update_account(
 
 # --- GET single account by ID ---
 @router.get("/{account_unique_id}", response_model=AccountRead)
-def get_account(
+async def get_account(
     account_unique_id: str,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)):
     """
     Retrieve a single account by its account_unique_id."""
-    account = account_utils.get_account_by_account_unique_id(
+    account = await account_utils.get_account_by_account_unique_id(
         account_unique_id=account_unique_id,
         session=session
     )
@@ -105,14 +105,14 @@ def get_account(
 
 # --- DELETE an Account and orphaned Users---
 @router.delete("/{account_unique_id}", response_model=dict)
-def delete_account(
+async def delete_account(
     account_unique_id: str,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """
     Delete an account and any users that are only associated with this account."""
-    account = account_utils.get_account_by_account_unique_id(
+    account = await account_utils.get_account_by_account_unique_id(
         account_unique_id=account_unique_id,
         session=session
     )
@@ -120,15 +120,15 @@ def delete_account(
         raise HTTPException(status_code=404, detail="Account not found")
     
     # Find users associated only with this account
-    users_to_delete = user_utils.get_orphaned_users_to_delete(account=account, session=session)
+    users_to_delete = await user_utils.get_orphaned_users_to_delete(account=account, session=session)
     
     # Delete the account
-    session.delete(account)
+    await session.delete(account)
     
     # Delete orphaned users
     for user in users_to_delete:
-        user_utils.delete_user_in_db(user=user, session=session)
+        await user_utils.delete_user_in_db(user=user, session=session)
     
-    session.commit()
+    await session.commit()
     
     return {"detail": "Account and associated orphaned users deleted successfully"}
