@@ -11,9 +11,10 @@ app = FastAPI(title=settings.PROJECT_NAME)
 
 def init_db():
     if settings.ENV == "development":
-        SQLModel.metadata.create_all(engine)
+        # SQLModel.metadata.create_all(engine)
+        pass
 
-init_db()
+# init_db()
 
 
 app.include_router(api_v1_router, prefix=settings.API_V1_PREFIX)

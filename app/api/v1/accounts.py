@@ -8,7 +8,7 @@ from app.schemas.accounts import AccountCreate, AccountRead, AccountUpdate
 from app.schemas.users import UserCreate, UserReadBasic
 from app.utils import accounts as account_utils
 from app.utils import users as user_utils
-from app.api.v1.auth import get_current_user
+from app.utils.auth import get_current_user
 from app.core.security import hash_password
 
 router = APIRouter()

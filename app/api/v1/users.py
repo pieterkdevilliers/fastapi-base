@@ -6,7 +6,7 @@ from app.core.db import get_session
 from app.models.users import User
 from app.schemas.users import UserCreate, UserRead, UserReadBasic, UserUpdate
 from app.utils import users as user_utils
-from app.api.v1.auth import get_current_user
+from app.utils.auth import get_current_user
 
 router = APIRouter()
 
