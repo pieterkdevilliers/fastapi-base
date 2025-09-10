@@ -38,3 +38,4 @@ async def update_account(account: Account, account_organisation: str, session: A
     await session.commit()
     await session.refresh(account)
     return account
+

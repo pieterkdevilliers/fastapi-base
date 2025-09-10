@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import Session, select
+from sqlalchemy.orm import selectinload
 from jose import jwt, JWTError
 from app.schemas.token import Token
 from app.schemas.users import UserLogin
@@ -23,14 +24,27 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Sessi
     """
     Authenticate user and return a JWT token.
     """
-    statement = select(User).where(User.email == form_data.username)
+
+    statement = (
+        select(User)
+        .where(User.email == form_data.username)
+        .options(selectinload(User.accounts))
+    )
     result = await session.exec(statement)
     db_user = result.first()
     if not db_user or not await security.verify_password(form_data.password, db_user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = await security.create_access_token(data={"sub": db_user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    accounts = db_user.accounts
+    if len(accounts) == 1:
+        account_unique_id = accounts[0].account_unique_id
+        account_organisation = accounts[0].account_organisation
+    else:
+        account_unique_id = None
+        account_organisation = None
+
+    return {"access_token": access_token, "account_unique_id": account_unique_id, "account_organisation": account_organisation , "token_type": "bearer"}
 
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
