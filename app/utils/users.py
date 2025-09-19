@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from app.models.users import User
 from app.models.accounts import Account
+from app.models.associations import UserAccountLink
 
 
 async def create_new_user_in_db(
@@ -61,12 +62,18 @@ async def remove_user_from_account(user: User, account_id: int, session: AsyncSe
 
 async def get_users_for_account(account_unique_id: str, session: AsyncSession):
     """
-    Retrives all User objects based on account_unique_id
+    Retrieves all User objects related to a given account_unique_id.
     """
-    statement = select(User).filter(Account.account_unique_id == account_unique_id)
+    statement = (
+        select(User)
+        .join(UserAccountLink, UserAccountLink.user_id == User.id)
+        .join(Account, UserAccountLink.account_id == Account.id)
+        .where(Account.account_unique_id == account_unique_id)
+        .options(selectinload(User.accounts))  # eager load accounts if needed
+    )
+
     result = await session.exec(statement)
     users = result.all()
-
     return users
 
 
