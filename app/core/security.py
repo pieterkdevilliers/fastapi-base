@@ -85,5 +85,6 @@ async def delete_reset_token(token_record: PasswordResetToken, session: AsyncSes
     """
     Deletes a password reset token from the database.
     """
-    session.delete(token_record)
+    print(f"Deleting token: {token_record.token}")
+    await session.delete(token_record)
     await session.commit()
