@@ -7,7 +7,7 @@ class UserCreate(BaseModel):
     Schema for creating a new user.
     """
     email: str
-    password: str
+    password: Optional[str] = None
     full_name: Optional[str] = None
     account_ids: Optional[List[int]] = []  # IDs of accounts to assign on creation
 
