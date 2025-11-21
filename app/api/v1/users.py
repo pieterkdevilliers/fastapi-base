@@ -42,7 +42,7 @@ async def get_user(
     return user
 
 # --- POST create a new user ---
-@router.post("/", response_model=UserRead)
+@router.post("/", response_model=UserReadBasic)
 async def create_user(
     user: UserCreate,
     current_user: User = Depends(get_current_user), 
