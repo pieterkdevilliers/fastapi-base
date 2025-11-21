@@ -139,7 +139,7 @@ async def update_user_in_db(user: User, email: Optional[str], full_name: Optiona
 async def delete_user_in_db(user: User, session: AsyncSession):
     """
     Deletes a user from the database."""
-    session.delete(user)
+    await session.delete(user)
     await session.commit()
     return
 
